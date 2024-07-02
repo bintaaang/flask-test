@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Data</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .thead-dark {
+            color: #ffffff;
+        }
+        .data-table-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .data-table {
+            width: 100%;
+        }
+        .data-table th,
+        .data-table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+        .data-table th {
+            height: 50px;
+            position: sticky;
+            top: 0;
+            background-color: #007bff;
+            color: #ffffff;
+        }
+        .data-table td:nth-child(1) {
+            text-align: center;
+            width: 10%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5 mb-3">Firebase Data</h1>
+
+        <!-- Table for Latest Data -->
+        <table class="table table-bordered data-table">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Nitrogen</th>
+                    <th>Fosfor</th>
+                    <th>Kalium</th>
+                    <th>pH</th>
+                </tr>
+            </thead>
+            <tbody id="latest-data">
+                <!-- Data will be populated dynamically -->
+            </tbody>
+        </table>
+
+        <!-- Table for All Data -->
+        <h2 class="mt-4">All Data</h2>
+        <div class="data-table-container">
+            <table class="table table-bordered data-table">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Nitrogen</th>
+                        <th>Fosfor</th>
+                        <th>Kalium</th>
+                        <th>pH</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="all-data">
+                    <!-- Data will be populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Export CSV Button -->
+        <button class="btn btn-success mt-3 mr-2" onclick="exportToCSV()">Export to CSV</button>
+        
+        <!-- Reset Button -->
+        <button class="btn btn-danger mt-3" onclick="resetTable()">Reset</button>
+
+        <a href="/" class="btn btn-primary mt-3 ml-2">Kembali</a>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function fetchAndDisplayData() {
+            fetch("/fetch_all_data")
+                .then(response => response.json())
+                .then(data => {
+                    updateLatestData(data); // Update latest data display
+                    updateAllData(data);    // Update all data display
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        function updateLatestData(data) {
+            const latestDataBody = document.getElementById("latest-data");
+            latestDataBody.innerHTML = ""; // Clear existing data
+
+            // Find the latest entry
+            const latestEntry = data[data.length - 1];
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${latestEntry.data.Nitrogen}</td>
+                <td>${latestEntry.data.Phosphorous}</td>
+                <td>${latestEntry.data.Potassium}</td>
+                <td>${latestEntry.data.ph}</td>
+            `;
+            latestDataBody.appendChild(row);
+        }
+
+        function updateAllData(data) {
+            const allDataBody = document.getElementById("all-data");
+            allDataBody.innerHTML = ""; // Clear existing data
+
+            data.forEach((entry, index) => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${entry.data.Nitrogen}</td>
+                    <td>${entry.data.Phosphorous}</td>
+                    <td>${entry.data.Potassium}</td>
+                    <td>${entry.data.ph}</td>
+                    <td>${entry.timestamp}</td>
+                `;
+                allDataBody.appendChild(row);
+            });
+        }
+
+        // Function to export data to CSV
+        function exportToCSV() {
+            const data = document.getElementById("all-data");
+            const rows = data.querySelectorAll("tr");
+            let csvContent = "data:text/csv;charset=utf-8,"
+                + "No,Nitrogen,Fosfor,Kalium,pH,Timestamp\n";
+
+            rows.forEach(row => {
+                const cols = row.querySelectorAll("td");
+                let rowText = "";
+                cols.forEach((col, index) => {
+                    rowText += col.innerText;
+                    if (index < cols.length - 1) {
+                        rowText += ",";
+                    } else {
+                        rowText += "\n";
+                    }
+                });
+                csvContent += rowText;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "firebase_data.csv");
+            document.body.appendChild(link); // Required for FF
+
+            link.click();
+        }
+
+        // Function to reset table
+        function resetTable() {
+            // Fetch endpoint untuk reset data
+            fetch('/reset_data', {
+                method: 'POST'
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Jika reset berhasil, perbarui tampilan tabel
+                    const allDataBody = document.getElementById("all-data");
+                    allDataBody.innerHTML = ""; // Clear all data
+                } else {
+                    console.error('Failed to reset data');
+                }
+            })
+            .catch(error => console.error('Error resetting data:', error));
+        }
+
+
+        // Fetch and display data when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchAndDisplayData();
+            setInterval(fetchAndDisplayData, 2000); // Refresh data every 2 seconds
+        });
+    </script>
+</body>
+</html>

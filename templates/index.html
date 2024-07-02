@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Disease Prediction</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            margin-top: 50px;
+        }
+
+        h1, h3 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        #cameraContainer {
+            display: none;
+            margin-top: 20px;
+        }
+
+        video {
+            width: 100%;
+            border-radius: 10px;
+            border: 2px solid #dee2e6;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Plant Disease Prediction</h1>
+        <form id="uploadForm" action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="file">Upload Image:</label>
+                <input type="file" class="form-control-file" id="file" name="file">
+            </div>
+            <button type="submit" class="btn btn-primary">Predict</button>
+        </form>
+        <h3>Or Capture Image:</h3>
+        <button class="btn btn-secondary" onclick="openCamera()">Open Camera</button>
+        <div id="cameraContainer">
+            <video id="camera" autoplay></video>
+            <button class="btn btn-danger" onclick="captureImage()">Capture</button>
+        </div>
+        <form id="captureForm" action="{{ url_for('upload_file') }}" method="post">
+            <input type="hidden" id="image_data" name="image_data">
+        </form>
+        <a href="{{ url_for('firebase_data_view') }}" class="btn btn-info mt-3">View Firebase Data</a>
+    </div>
+
+    <script>
+        function openCamera() {
+            document.getElementById('cameraContainer').style.display = 'block';
+            var video = document.getElementById('camera');
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true }).then(function(stream) {
+                    video.srcObject = stream;
+                    video.play();
+                });
+            }
+        }
+
+        function captureImage() {
+            var video = document.getElementById('camera');
+            var canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            var context = canvas.getContext('2d');
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            var imageData = canvas.toDataURL('image/png');
+            document.getElementById('image_data').value = imageData;
+            document.getElementById('captureForm').submit();
+        }
+    </script>
+</body>
+</html>
