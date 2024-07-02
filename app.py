@@ -158,5 +158,5 @@ def fetch_latest_data():
 def fetch_all_data():
     return jsonify(all_data)
 
-#if __name__ == "__main__":
-   # app.run(debug=True)
+if __name__ == "__main__":
+   app.run(debug=True)
